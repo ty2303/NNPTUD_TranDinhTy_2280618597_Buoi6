@@ -13,11 +13,15 @@ module.exports = {
             }
             token = token.split(' ')[1];
         }
-        let result = jwt.verify(token, 'secret');
-        if (result && result.exp * 1000 > Date.now()) {
-            req.userId = result.id;
-            next();
-        } else {
+        try {
+            let result = jwt.verify(token, 'secret');
+            if (result && result.exp * 1000 > Date.now()) {
+                req.userId = result.id;
+                next();
+            } else {
+                res.status(403).send("ban chua dang nhap")
+            }
+        } catch (err) {
             res.status(403).send("ban chua dang nhap")
         }
     },
@@ -25,6 +29,10 @@ module.exports = {
         return async function (req, res, next) {
             let userId = req.userId;
             let user = await userController.FindUserById(userId);
+            if (!user || !user.role) {
+                res.status(403).send({ message: "ban khong co quyen" });
+                return;
+            }
             let currentRole = user.role.name;
             if (requiredRole.includes(currentRole)) {
                 next();
